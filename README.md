@@ -30,8 +30,8 @@ conda install -c conda-forge tqdm=4.43.0
 
 * Intall dependencies not available through conda using pip
 ```shell script
-pip install pyworld=0.2.8
-pip install mcd=0.4
+pip install pyworld==0.2.8
+pip install mcd==0.4
 ```
 
 **NB:** For mac users who cannot install pyworld see: https://github.com/JeremyCCHsu/Python-Wrapper-for-World-Vocoder

@@ -3,17 +3,22 @@ from unittest import TestCase
 import tensorflow
 from matplotlib import pyplot
 
-from simple.quadratic import sample_data, make_generator_model, make_discriminator_model, GAN, run_simple, SimpleGAN
+from simple.quadratic_gan import QuadraticGAN
 
 
-class Test(TestCase):
+class TestQuadraticGAN(TestCase):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.gan = QuadraticGAN()
+
     def test_sample_data(self):
-        data = sample_data()
+        data = self.gan.sample_data()
         pyplot.scatter(*zip(*data))
         pyplot.show()
 
     def test_make_generator_model(self):
-        generator = make_generator_model()
+        generator = self.gan.make_generator_model()
 
         noise = tensorflow.random.normal([1, 100])
         generated_image = generator(noise, training=False)
@@ -22,27 +27,13 @@ class Test(TestCase):
         pyplot.show()
 
     def test_make_discriminator_model(self):
-        generator = make_generator_model()
+        generator = self.gan.make_generator_model()
 
         noise = tensorflow.random.normal([1, 100])
         generated_image = generator(noise, training=False)
-        discriminator = make_discriminator_model()
+        discriminator = self.gan.make_discriminator_model()
         decision = discriminator(generated_image)
         print(decision)
 
-    def test_run_simple(self):
-        run_simple()
-
-
-class TestGAN(TestCase):
     def test_run(self):
-        gan = GAN()
-        pyplot.imshow(gan.train_images[0])
-        pyplot.show()
-        gan.run()
-
-
-class TestSimpleGAN(TestCase):
-    def test_run(self):
-        gan = SimpleGAN()
-        gan.run()
+        self.gan.run()

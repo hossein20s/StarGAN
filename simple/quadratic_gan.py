@@ -18,6 +18,26 @@ class QuadraticGAN:
         self.generator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
         self.discriminator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
 
+    def train_step(self, x_batch):
+        noise = tensorflow.random.normal([BATCH_SIZE, noise_dim])
+
+        with tensorflow.GradientTape() as gen_tape, tensorflow.GradientTape() as disc_tape:
+            generated_data = self.generator(noise, training=True)
+            x = x_batch  # .reshape(x_batch.shape[0], 2, 1, 1)
+            print(generated_data.shape)
+            real_output = self.discriminator(x, training=True)
+            fake_output = self.discriminator(generated_data, training=True)
+
+            gen_loss = generator_loss(fake_output)
+            disc_loss = discriminator_loss(real_output, fake_output)
+
+            gradients_of_generator = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
+        gradients_of_discriminator = disc_tape.gradient(disc_loss, self.discriminator.trainable_variables)
+
+        self.generator_optimizer.apply_gradients(zip(gradients_of_generator, self.generator.trainable_variables))
+        self.discriminator_optimizer.apply_gradients(
+            zip(gradients_of_discriminator, self.discriminator.trainable_variables))
+
     def train(self, epochs):
         # train_images = self.train_images.reshape(self.train_images.shape[0], 28, 28, 1).astype('float32')
         for epoch in range(epochs):
@@ -60,23 +80,3 @@ class QuadraticGAN:
         model.add(layers.Dense(2, use_bias=False))
         model.add(layers.Dense(1, use_bias=False))
         return model
-
-    def train_step(self, x_batch):
-        noise = tensorflow.random.normal([BATCH_SIZE, noise_dim])
-
-        with tensorflow.GradientTape() as gen_tape, tensorflow.GradientTape() as disc_tape:
-            generated_data = self.generator(noise, training=True)
-            x = x_batch  # .reshape(x_batch.shape[0], 2, 1, 1)
-            print(generated_data.shape)
-            real_output = self.discriminator(x, training=True)
-            fake_output = self.discriminator(generated_data, training=True)
-
-            gen_loss = generator_loss(fake_output)
-            disc_loss = discriminator_loss(real_output, fake_output)
-
-            gradients_of_generator = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
-        gradients_of_discriminator = disc_tape.gradient(disc_loss, self.discriminator.trainable_variables)
-
-        self.generator_optimizer.apply_gradients(zip(gradients_of_generator, self.generator.trainable_variables))
-        self.discriminator_optimizer.apply_gradients(
-            zip(gradients_of_discriminator, self.discriminator.trainable_variables))

@@ -7,11 +7,11 @@ from tensorflow.keras import layers
 
 from simple import generator_loss, discriminator_loss
 
-BUFFER_SIZE = 2000
+BUFFER_SIZE = 20000
 BATCH_SIZE = 256
-EPOCHS = 50
+EPOCHS = 10001
 noise_dim = 100
-num_examples_to_generate = 1000
+num_examples_to_generate = 10000
 
 seed = tensorflow.random.normal([num_examples_to_generate, noise_dim])
 
@@ -31,7 +31,6 @@ class QuadraticGAN:
         with tensorflow.GradientTape() as gen_tape, tensorflow.GradientTape() as disc_tape:
             generated_data = self.generator(noise, training=True)
             x = x_batch  # .reshape(x_batch.shape[0], 2, 1, 1)
-            print(generated_data.shape)
             real_output = self.discriminator(x, training=True)
             fake_output = self.discriminator(generated_data, training=True)
 
@@ -48,27 +47,24 @@ class QuadraticGAN:
     def train(self, dataset, epochs):
         # train_images = self.train_images.reshape(self.train_images.shape[0], 28, 28, 1).astype('float32')
         for epoch in range(epochs):
-            self.train_step(self.sample_data(n=BATCH_SIZE))
-        for epoch in range(epochs):
             start = time.time()
 
             for x_batch in dataset:
                 self.train_step(x_batch)
+            # print(epoch)
+            if epoch % 5 == 0:
+                print('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
+                # f.write("%d,%f,%f\n" % (i, dloss, gloss))
 
-            # Produce images for the GIF as we go
-            # display.clear_output(wait=True)
-            self.generate_and_save_images(self.generator,
-                                     epoch + 1,
-                                     seed)
+            if epoch % 20 == 0:
+                # Produce images for the GIF as we go
+                # display.clear_output(wait=True)
+                self.generate_and_save_images(self.generator, epoch + 1, seed)
 
-
-            print('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
 
         # Generate after the final epoch
         # display.clear_output(wait=True)
-        self.generate_and_save_images(self.generator,
-                                 epochs,
-                                 seed)
+        self.generate_and_save_images(self.generator, epochs, seed)
 
 
     def run(self):
@@ -81,7 +77,7 @@ class QuadraticGAN:
         return x * x + 10
 
     @staticmethod
-    def sample_data(n=1000, scale=100):
+    def sample_data(n=num_examples_to_generate, scale=100):
         data = []
         x = (numpy.random.random((n,)) - .5) * scale
         for i in range(n):
@@ -91,7 +87,7 @@ class QuadraticGAN:
     @staticmethod
     def make_generator_model():
         model = tensorflow.keras.Sequential()
-        model.add(layers.Dense(16, use_bias=False, input_shape=(BATCH_SIZE, 100)))
+        model.add(layers.Dense(16, use_bias=False, input_shape=(100,)))
         model.add(layers.LeakyReLU())
         model.add(layers.Dense(16, use_bias=False))
         model.add(layers.LeakyReLU())
@@ -101,7 +97,7 @@ class QuadraticGAN:
     @staticmethod
     def make_discriminator_model():
         model = tensorflow.keras.Sequential()
-        model.add(layers.Dense(16, use_bias=False, input_shape=(BATCH_SIZE, 2)))
+        model.add(layers.Dense(16, use_bias=False, input_shape=(2,)))
         model.add(layers.LeakyReLU())
         model.add(layers.Dense(16, use_bias=False))
         model.add(layers.LeakyReLU())
@@ -118,5 +114,5 @@ class QuadraticGAN:
         predictions = model(test_input, training=False)
 
         pyplot.scatter(*zip(*predictions.numpy()))
-        pyplot.savefig('image_at_epoch_{:04d}.png'.format(epoch))
+        # pyplot.savefig('image_at_epoch_{:04d}.png'.format(epoch))
         pyplot.show()

@@ -71,21 +71,15 @@ class MnistGAN:
 
             # Produce images for the GIF as we go
             # display.clear_output(wait=True)
-            self.generate_and_save_images(self.generator,
-                                     epoch + 1,
-                                     seed)
-
+            self.generate_and_save_images(self.generator, epoch + 1, seed)
             # Save the model every 15 epochs
             if (epoch + 1) % 15 == 0:
                 self.checkpoint.save(file_prefix=self.checkpoint_prefix)
-
             print('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
 
         # Generate after the final epoch
         # display.clear_output(wait=True)
-        self.generate_and_save_images(self.generator,
-                                 epochs,
-                                 seed)
+        self.generate_and_save_images(self.generator, epochs, seed)
 
     def run(self):
         # Batch and shuffle the data

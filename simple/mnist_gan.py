@@ -195,7 +195,7 @@ class MnistGAN:
         # This is so all layers run in inference mode (batchnorm).
         predictions = model(test_input, training=False)
 
-        fig = pyplot.figure(figsize=(4, 4))
+        pyplot.figure(figsize=(4, 4))
 
         for i in range(predictions.shape[0]):
             pyplot.subplot(4, 4, i + 1)

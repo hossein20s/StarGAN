@@ -1,12 +1,19 @@
+import time
+
 import numpy
 import tensorflow
+from matplotlib import pyplot
 from tensorflow.keras import layers
 
 from simple import generator_loss, discriminator_loss
 
+BUFFER_SIZE = 2000
 BATCH_SIZE = 256
 EPOCHS = 50
 noise_dim = 100
+num_examples_to_generate = 1
+
+seed = tensorflow.random.normal([num_examples_to_generate, noise_dim])
 
 
 class QuadraticGAN:
@@ -38,13 +45,36 @@ class QuadraticGAN:
         self.discriminator_optimizer.apply_gradients(
             zip(gradients_of_discriminator, self.discriminator.trainable_variables))
 
-    def train(self, epochs):
+    def train(self, dataset, epochs):
         # train_images = self.train_images.reshape(self.train_images.shape[0], 28, 28, 1).astype('float32')
         for epoch in range(epochs):
             self.train_step(self.sample_data(n=BATCH_SIZE))
+        for epoch in range(epochs):
+            start = time.time()
+
+            for x_batch in dataset:
+                self.train_step(x_batch)
+
+            # Produce images for the GIF as we go
+            # display.clear_output(wait=True)
+            self.generate_and_save_images(self.generator,
+                                     epoch + 1,
+                                     seed)
+
+
+            print('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
+
+        # Generate after the final epoch
+        # display.clear_output(wait=True)
+        self.generate_and_save_images(self.generator,
+                                 epochs,
+                                 seed)
+
 
     def run(self):
-        self.train(EPOCHS)
+        y = self.sample_data()
+        train_dataset = tensorflow.data.Dataset.from_tensor_slices(y).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+        self.train(train_dataset, EPOCHS)
 
     @staticmethod
     def get_y(x):
@@ -63,8 +93,8 @@ class QuadraticGAN:
         model = tensorflow.keras.Sequential()
         model.add(layers.Dense(16, use_bias=False, input_shape=(BATCH_SIZE, 100)))
         model.add(layers.LeakyReLU())
-        # model.add(layers.Dense(16, use_bias=False))
-        # model.add(layers.LeakyReLU())
+        model.add(layers.Dense(16, use_bias=False))
+        model.add(layers.LeakyReLU())
         model.add(layers.Dense(2, use_bias=False))
         return model
 
@@ -73,10 +103,20 @@ class QuadraticGAN:
         model = tensorflow.keras.Sequential()
         model.add(layers.Dense(16, use_bias=False, input_shape=(BATCH_SIZE, 2)))
         model.add(layers.LeakyReLU())
-        # model.add(layers.Dense(16, use_bias=False))
-        # model.add(layers.LeakyReLU())
-        # model.add(layers.Dense(2, use_bias=False))
-        # model.add(layers.LeakyReLU())
+        model.add(layers.Dense(16, use_bias=False))
+        model.add(layers.LeakyReLU())
+        model.add(layers.Dense(2, use_bias=False))
+        model.add(layers.LeakyReLU())
         model.add(layers.Dense(2, use_bias=False))
         model.add(layers.Dense(1, use_bias=False))
         return model
+
+    @staticmethod
+    def generate_and_save_images(model, epoch, test_input):
+        # Notice `training` is set to False.
+        # This is so all layers run in inference mode (batchnorm).
+        predictions = model(test_input, training=False)
+
+        pyplot.scatter(*zip(*predictions.numpy()))
+        pyplot.savefig('image_at_epoch_{:04d}.png'.format(epoch))
+        pyplot.show()

@@ -139,8 +139,7 @@ class MnistGAN:
 
         return model
 
-    @staticmethod
-    def train(self, epochs, batch_size=128, save_interval=50):
+    def train1(self, epochs, batch_size=128, save_interval=5):
         # Load the dataset
         (x_train, _), (_, _) = mnist.load_data()
 

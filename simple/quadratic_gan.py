@@ -10,11 +10,11 @@ from tensorflow.keras import layers
 
 from simple import generator_loss, discriminator_loss
 
-BUFFER_SIZE = 10
-BATCH_SIZE = 100
+BUFFER_SIZE = 12
+BATCH_SIZE = 3
 EPOCHS = 20000
 noise_dim = 100
-num_examples_to_generate = 10
+num_examples_to_generate = 12
 
 seed = tensorflow.random.normal([num_examples_to_generate, noise_dim])
 
@@ -71,8 +71,8 @@ class QuadraticGAN:
         return image_buffers
 
     def run(self, debug=False):
-        image_buffers = train_dataset = tensorflow.data.Dataset.from_tensor_slices(self.data).batch(BATCH_SIZE)
-        self.train(train_dataset, EPOCHS, debug=debug)
+        train_dataset = tensorflow.data.Dataset.from_tensor_slices(self.data).batch(BATCH_SIZE)
+        image_buffers = self.train(train_dataset, EPOCHS, debug=debug)
         # First set up the figure, the axis, and the plot element we want to animate
         fig, ax = pyplot.subplots(nrows=1, ncols=1, figsize=(10, 10))
         pyplot.close()

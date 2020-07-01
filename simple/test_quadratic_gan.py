@@ -39,3 +39,7 @@ class TestQuadraticGAN(TestCase):
 
     def test_run(self):
         self.gan.run()
+
+    def test_simple(self):
+        self.gan.simple_animate()
+

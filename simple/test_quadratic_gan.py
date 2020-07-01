@@ -38,8 +38,6 @@ class TestQuadraticGAN(TestCase):
         print(decision)
 
     def test_run(self):
-        self.gan.run()
+        self.gan.run(debug=False)
 
-    def test_simple(self):
-        self.gan.simple_animate()
 

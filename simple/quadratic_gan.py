@@ -13,12 +13,11 @@ from simple import generator_loss, discriminator_loss
 
 BUFFER_SIZE = 10
 BATCH_SIZE = 100
-EPOCHS = 500
+EPOCHS = 20000
 noise_dim = 100
 num_examples_to_generate = 10
 
 seed = tensorflow.random.normal([num_examples_to_generate, noise_dim])
-i = 0
 
 
 class QuadraticGAN:
@@ -30,14 +29,6 @@ class QuadraticGAN:
         self.discriminator = self.make_discriminator_model()
         self.generator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
         self.discriminator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
-        self.fig = pyplot.figure(figsize=(10, 6))
-        # pyplot.xlim(-5, 5)
-        # pyplot.ylim(0, 10)
-        pyplot.xlabel('X', fontsize=20)
-        pyplot.ylabel('Y', fontsize=20)
-        pyplot.title('GAN', fontsize=20)
-        anim_writer = animation.writers['ffmpeg']
-        self.anim_writer = anim_writer(fps=15, metadata=dict(artist='Hossein'), bitrate=1800)
 
 
 
@@ -59,9 +50,9 @@ class QuadraticGAN:
         self.discriminator_optimizer.apply_gradients(
             zip(gradients_of_discriminator, self.discriminator.trainable_variables))
 
-    def train(self, dataset, epochs):
+    def train(self, dataset, epochs, debug=False):
         start = time.time()
-        output_images = []
+        image_buffers = []
         for epoch in range(epochs):
 
             for x_batch in dataset:
@@ -74,16 +65,17 @@ class QuadraticGAN:
             if epoch % 100 == 0:
                 # Produce images for the GIF as we go
                 # display.clear_output(wait=True)
-                output_images.append(self.log_loss_and_save_images(epoch + 1, seed))
-
+                image_buffers.append(self.log_loss_and_save_images(epoch + 1, seed, debug=debug))
         # Generate after the final epoch
         # display.clear_output(wait=True)
-        last_buffer = self.log_loss_and_save_images(epochs, seed)
-        last_buffer.seek(0)
-        # im = pyplot.imshow(pyplot.imread(last_buffer))
-        image = numpy.random.rand(64, 16, 128)
-        animation.rcParams['animation.writer'] = 'ffmpeg'
+        image_buffers.append(self.log_loss_and_save_images(epochs, seed, debug=debug))
+        return image_buffers
 
+
+
+    def run(self, debug=False):
+        image_buffers = train_dataset = tensorflow.data.Dataset.from_tensor_slices(self.data).batch(BATCH_SIZE)
+        self.train(train_dataset, EPOCHS, debug=debug)
         # First set up the figure, the axis, and the plot element we want to animate
         fig, ax = pyplot.subplots(nrows=1, ncols=1, figsize=(10, 10))
         pyplot.close()
@@ -91,37 +83,26 @@ class QuadraticGAN:
         ax.ylim = (0, 10)
         ax.set_xticks([])
         ax.set_yticks([])
-        img = ax.imshow(pyplot.imread(last_buffer))
-        # img = ax.imshow(image[:, :, 0].T, cmap='gray')
+        buffer = image_buffers[0]
+        buffer.seek(0)
+        img = ax.imshow(pyplot.imread(buffer))
         img.set_interpolation('nearest')
 
         def updatefig(frame, buffers):
             print(frame)
-            # buffer = buffers[frame]
-            output_images[frame].seek(0)
-            # pyplot.close()
-            # return pyplot.imread(buffers[frame])
-            # pyplot.imshow(pyplot.imread(buffer))
-            # pyplot.show()
-            # pyplot.close()
-            # buffer.seek(0)
-            # clear_output(wait=True)
-            # sys.stdout.flush()
-
-            # img.set_data(image[:, :, frame].T)
-            img.set_data(pyplot.imread(output_images[frame]))
+            buffer = buffers[frame]
+            buffer.seek(0)
+            img.set_data(pyplot.imread(buffer))
             return (img,)
-            # return pyplot.imshow(pyplot.imread(buffer)),
-        animation_function = animation.FuncAnimation(fig, updatefig, frames=len(output_images), fargs=(output_images,),
-                                       interval=50, blit=True)
-        animation_function.save('/opt/host/Downloads/1.mp4', writer=self.anim_writer)
+        animation_function = animation.FuncAnimation(fig, updatefig, frames=len(image_buffers), fargs=(image_buffers,),
+                                       interval=100, blit=True)
+        anim_writer = animation.writers['ffmpeg']
+        writer = anim_writer(fps=15, metadata=dict(artist='Hossein'), bitrate=1800)
+        time_string = time.strftime("%Y%m%d-%H%M%S")
+        file_name = '{}{}-{}.mp4'.format('/opt/host/Downloads/', QuadraticGAN.__name__, time_string)
+        animation_function.save(file_name, writer=writer, )
 
-
-    def run(self):
-        train_dataset = tensorflow.data.Dataset.from_tensor_slices(self.data).batch(BATCH_SIZE)
-        self.train(train_dataset, EPOCHS)
-
-    def log_loss_and_save_images(self, epoch, test_input):
+    def log_loss_and_save_images(self, epoch, test_input, debug=False):
         # Notice `training` is set to False.
         # This is so all layers run in inference mode (batchnorm).
         generated_data = self.generator(test_input, training=False)
@@ -132,15 +113,15 @@ class QuadraticGAN:
         gen_loss = generator_loss(fake_output)
         disc_loss = discriminator_loss(real_output, fake_output)
         print('epoch {}, gen loss {}, discriminator loss {}'.format(epoch, gen_loss.numpy(), disc_loss.numpy()))
+        pyplot.close()
         pyplot.scatter(*zip(*generated_data.numpy()))
         pyplot.scatter(*zip(*self.data))
         buffer = io.BytesIO()
-        fig = pyplot.gcf()
-        fig.savefig(buffer, format='png')
-        buffer.seek(0)
-        # pyplot.show()
-        pyplot.close()
-        # pyplot.imread(buffer)
+        pyplot.savefig(buffer, format='png')
+        if debug:
+            buffer.seek(0)
+            pyplot.imread(buffer)
+            pyplot.show()
         return buffer
 
     @staticmethod

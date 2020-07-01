@@ -13,7 +13,7 @@ from simple import generator_loss, discriminator_loss
 
 BUFFER_SIZE = 10
 BATCH_SIZE = 100
-EPOCHS = 40
+EPOCHS = 500
 noise_dim = 100
 num_examples_to_generate = 10
 
@@ -71,33 +71,34 @@ class QuadraticGAN:
                 print('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
                 # f.write("%d,%f,%f\n" % (i, dloss, gloss))
 
-            # if epoch % 100 == 0:
-            #     # Produce images for the GIF as we go
-            #     # display.clear_output(wait=True)
-            #     output_images.append(self.log_loss_and_save_images(epoch + 1, seed))
+            if epoch % 100 == 0:
+                # Produce images for the GIF as we go
+                # display.clear_output(wait=True)
+                output_images.append(self.log_loss_and_save_images(epoch + 1, seed))
 
         # Generate after the final epoch
         # display.clear_output(wait=True)
-        # last_buffer = self.log_loss_and_save_images(epochs, seed)
-        # last_buffer.seek(0)
+        last_buffer = self.log_loss_and_save_images(epochs, seed)
+        last_buffer.seek(0)
         # im = pyplot.imshow(pyplot.imread(last_buffer))
         image = numpy.random.rand(64, 16, 128)
         animation.rcParams['animation.writer'] = 'ffmpeg'
 
         # First set up the figure, the axis, and the plot element we want to animate
-        fig, ax = pyplot.subplots(nrows=1, ncols=1, figsize=(8, 2))
+        fig, ax = pyplot.subplots(nrows=1, ncols=1, figsize=(10, 10))
         pyplot.close()
-        ax.xlim = (0, image.shape[1])
-        ax.ylim = (0, image.shape[2])
+        ax.xlim = (0, 10)
+        ax.ylim = (0, 10)
         ax.set_xticks([])
         ax.set_yticks([])
-        img = ax.imshow(image[:, :, 0].T, cmap='gray')
+        img = ax.imshow(pyplot.imread(last_buffer))
+        # img = ax.imshow(image[:, :, 0].T, cmap='gray')
         img.set_interpolation('nearest')
 
         def updatefig(frame, buffers):
-            # print(frame)
+            print(frame)
             # buffer = buffers[frame]
-            # buffer.seek(0)
+            output_images[frame].seek(0)
             # pyplot.close()
             # return pyplot.imread(buffers[frame])
             # pyplot.imshow(pyplot.imread(buffer))
@@ -107,13 +108,13 @@ class QuadraticGAN:
             # clear_output(wait=True)
             # sys.stdout.flush()
 
-            img.set_data(image[:, :, frame].T)
-            # im.set_data(pyplot.imread(buffer))
+            # img.set_data(image[:, :, frame].T)
+            img.set_data(pyplot.imread(output_images[frame]))
             return (img,)
             # return pyplot.imshow(pyplot.imread(buffer)),
-        animation_function = animation.FuncAnimation(fig, updatefig, frames=image.shape[-1], fargs=(output_images,),
+        animation_function = animation.FuncAnimation(fig, updatefig, frames=len(output_images), fargs=(output_images,),
                                        interval=50, blit=True)
-        animation_function.save('/opt/host/Downloads/17.mp4', writer=self.anim_writer)
+        animation_function.save('/opt/host/Downloads/1.mp4', writer=self.anim_writer)
 
 
     def run(self):

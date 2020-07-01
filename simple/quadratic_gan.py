@@ -1,11 +1,10 @@
 import io
-import sys
+import logging
 import time
 
-from matplotlib import animation
 import numpy
-import seaborn
 import tensorflow
+from matplotlib import animation
 from matplotlib import pyplot
 from tensorflow.keras import layers
 
@@ -24,13 +23,13 @@ class QuadraticGAN:
 
     def __init__(self) -> None:
         super().__init__()
+        logging.basicConfig(filename='/opt/host/Downloads/quadtaricGAN.log', level=logging.DEBUG)
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.data = self.sample_data()
         self.generator = self.make_generator_model()
         self.discriminator = self.make_discriminator_model()
         self.generator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
         self.discriminator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
-
-
 
     def train_step(self, x):
         noise = tensorflow.random.normal([BATCH_SIZE, noise_dim])
@@ -57,9 +56,9 @@ class QuadraticGAN:
 
             for x_batch in dataset:
                 self.train_step(x_batch)
-            # print(epoch)
+            # self.logger.info(epoch)
             if epoch % 20 == 0:
-                print('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
+                self.logger.info('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
                 # f.write("%d,%f,%f\n" % (i, dloss, gloss))
 
             if epoch % 100 == 0:
@@ -70,8 +69,6 @@ class QuadraticGAN:
         # display.clear_output(wait=True)
         image_buffers.append(self.log_loss_and_save_images(epochs, seed, debug=debug))
         return image_buffers
-
-
 
     def run(self, debug=False):
         image_buffers = train_dataset = tensorflow.data.Dataset.from_tensor_slices(self.data).batch(BATCH_SIZE)
@@ -89,13 +86,14 @@ class QuadraticGAN:
         img.set_interpolation('nearest')
 
         def updatefig(frame, buffers):
-            print(frame)
+            self.logger.info(frame)
             buffer = buffers[frame]
             buffer.seek(0)
             img.set_data(pyplot.imread(buffer))
             return (img,)
+
         animation_function = animation.FuncAnimation(fig, updatefig, frames=len(image_buffers), fargs=(image_buffers,),
-                                       interval=100, blit=True)
+                                                     interval=100, blit=True)
         anim_writer = animation.writers['ffmpeg']
         writer = anim_writer(fps=15, metadata=dict(artist='Hossein'), bitrate=1800)
         time_string = time.strftime("%Y%m%d-%H%M%S")
@@ -109,10 +107,10 @@ class QuadraticGAN:
         real_output = self.discriminator(self.data, training=False)
         fake_output = self.discriminator(generated_data, training=True)
 
-
         gen_loss = generator_loss(fake_output)
         disc_loss = discriminator_loss(real_output, fake_output)
-        print('epoch {}, gen loss {}, discriminator loss {}'.format(epoch, gen_loss.numpy(), disc_loss.numpy()))
+        self.logger.info(
+            'epoch {}, gen loss {}, discriminator loss {}'.format(epoch, gen_loss.numpy(), disc_loss.numpy()))
         pyplot.close()
         pyplot.scatter(*zip(*generated_data.numpy()))
         pyplot.scatter(*zip(*self.data))
@@ -158,7 +156,7 @@ class QuadraticGAN:
         model.add(layers.Dense(2, use_bias=False))
         model.add(layers.Dense(1, use_bias=False))
         return model
-    
+
     # def simple_animate(self):
     #     arr = []
     #     for i in range(100):
@@ -179,24 +177,22 @@ class QuadraticGAN:
     #     ani = animation.FuncAnimation(fig, updatefig, blit=True)
     #     pyplot.show()
 
+    # def updatefig(*args):
+    #     pyplot.scatter(*zip(*generated_data.numpy()))
+    #     pyplot.scatter(*zip(*self.data))
+    #     buf = io.BytesIO()
+    #     pyplot.savefig(buf, format='png')
+    #     buf.seek(0)
+    #     return pyplot.imshow(pyplot.imread(buf)),
 
-        # def updatefig(*args):
-        #     pyplot.scatter(*zip(*generated_data.numpy()))
-        #     pyplot.scatter(*zip(*self.data))
-        #     buf = io.BytesIO()
-        #     pyplot.savefig(buf, format='png')
-        #     buf.seek(0)
-        #     return pyplot.imshow(pyplot.imread(buf)),
-
-        # # pyplot.figure(figsize=(1, 2))
-        # # pyplot.show()
-        #
-        # animation_function = animation.FuncAnimation(self.fig, updatefig, frames=100, repeat=True)
-        # # pyplot.plot(*zip(*fake_output.numpy()))
-        # # pyplot.plot(*zip(*real_output.numpy()))
-        # # # pyplot.savefig('image_at_epoch_{:04d}.png'.format(epoch))
-        # # updatefig()
-        # # pyplot.show()
-        # if last:
-        #     animation_function.save('1.mp4', writer=self.anim_writer)
-
+    # # pyplot.figure(figsize=(1, 2))
+    # # pyplot.show()
+    #
+    # animation_function = animation.FuncAnimation(self.fig, updatefig, frames=100, repeat=True)
+    # # pyplot.plot(*zip(*fake_output.numpy()))
+    # # pyplot.plot(*zip(*real_output.numpy()))
+    # # # pyplot.savefig('image_at_epoch_{:04d}.png'.format(epoch))
+    # # updatefig()
+    # # pyplot.show()
+    # if last:
+    #     animation_function.save('1.mp4', writer=self.anim_writer)

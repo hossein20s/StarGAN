@@ -11,3 +11,5 @@ for 36 points https://drive.google.com/file/d/1BSyHWwnnz_WFKUwtzi6XHlpylYWBKHPk/
 for 100 points https://youtu.be/kkmzKsbmwGY 
 https://drive.google.com/file/d/1wHcUT2twvEA_0mWd74sKPZlla7iPeuyd/view?usp=sharing
 
+Iterative 3 x 1000 epochs from 3x10 to 5x3x100 to 20x3x10 to 30x3x10 took about an hour logs https://drive.google.com/file/d/1S1TbFBgmCV0kk4RybqWGbmSkoeQIcgPn/view?usp=sharing
+and video https://youtu.be/9N96fMDP7xk

@@ -1,6 +1,7 @@
 import io
 import logging
 import logging.config
+import os
 import time
 
 import numpy
@@ -13,7 +14,7 @@ from simple import generator_loss, discriminator_loss
 
 SCALE = 10
 noise_dim = 100
-
+checkpoint_dir = '/opt/host/Downloads/training_checkpoints'
 
 class QuadraticGAN:
 
@@ -27,9 +28,16 @@ class QuadraticGAN:
         self.discriminator = self.make_discriminator_model()
         self.generator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
         self.discriminator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
+        self.checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
+        self.checkpoint = tensorflow.train.Checkpoint(generator_optimizer=self.generator_optimizer,
+                                                      discriminator_optimizer=self.discriminator_optimizer,
+                                                      generator=self.generator,
+                                                      discriminator=self.discriminator)
 
     def run(self, debug=False):
         self.run_iteration(batch_size=self.batch_size, epochs=1000, debug=debug)
+        self.checkpoint.save(file_prefix=self.checkpoint_prefix)
+        # self.checkpoint.restore(tensorflow.train.latest_checkpoint(checkpoint_dir))
         self.run_iteration(batch_size=self.batch_size * 5, epochs=1000, debug=debug)
         self.run_iteration(batch_size=self.batch_size * 20, epochs=1000, debug=debug)
         self.run_iteration(batch_size=self.batch_size * 30, epochs=1000, debug=debug)

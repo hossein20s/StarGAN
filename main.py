@@ -26,7 +26,7 @@ def main(config):
     trg_spk = config.speakers[1]
 
     # Data loader.
-    train_loader = get_loader(config.speakers, config.train_data_dir, config.batch_size, 'train', num_workers=config.num_workers)
+    train_loader = get_loader(config.speakers, config.train_data_dir, config.initial_batch_size, 'train', num_workers=config.num_workers)
     # TODO: currently only used to output a sample whilst training
     test_loader = TestDataset(config.speakers, config.test_data_dir, config.wav_dir, src_spk=src_spk, trg_spk=trg_spk)
 

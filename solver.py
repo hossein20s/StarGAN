@@ -28,7 +28,7 @@ class Solver(object):
         self.lambda_id = config.lambda_id
 
         # Training configurations.
-        self.batch_size = config.batch_size
+        self.batch_size = config.initial_batch_size
         self.num_iters = config.num_iters
         self.num_iters_decay = config.num_iters_decay
         self.g_lr = config.g_lr

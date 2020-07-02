@@ -10,10 +10,10 @@ class TestQuadraticGAN(TestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.gan = QuadraticGAN()
+        self.gan = QuadraticGAN(initial_batch_size=3,number_of_batch=10)
 
     def test_sample_data(self):
-        y = self.gan.sample_data()
+        y = self.gan.sample_data(number_of_sample=100, scale=10)
         print(y.shape)
         pyplot.scatter(*zip(*y))
         pyplot.show()

@@ -10,11 +10,11 @@ from tensorflow.keras import layers
 
 from simple import generator_loss, discriminator_loss
 
-BUFFER_SIZE = 12
-BATCH_SIZE = 3
+BUFFER_SIZE = 36
+BATCH_SIZE = 9
 EPOCHS = 20000
 noise_dim = 100
-num_examples_to_generate = 12
+num_examples_to_generate = 36
 
 seed = tensorflow.random.normal([num_examples_to_generate, noise_dim])
 

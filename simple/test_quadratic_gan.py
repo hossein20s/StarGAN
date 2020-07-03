@@ -1,7 +1,12 @@
+import datetime
 from unittest import TestCase
 
+import numpy
+import pandas
 import tensorflow
 from matplotlib import pyplot
+from pandas_datareader import data
+from sklearn import preprocessing
 
 from simple.quadratic_gan import QuadraticGAN
 
@@ -20,12 +25,28 @@ def is_part_of_line(x):
     return m * x + b
 
 
+def zip_stock():
+    start = datetime.datetime(2014, 1, 1)
+    end = datetime.datetime(2019, 10, 30)
+    ticker = 'BNS'
+    df1 = data.DataReader(ticker, 'yahoo', start, end)
+    df = pandas.DataFrame()
+    df['x'] = df1['Adj Close'].index.astype(numpy.int64)
+    df['y'] = df1['Adj Close'].values
+    values = df.values  # returns a numpy array
+    min_max_scaler = preprocessing.MinMaxScaler()
+    values_scaled = min_max_scaler.fit_transform(values)
+    df = pandas.DataFrame(values_scaled)
+    return df
+
+
 class TestQuadraticGAN(TestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.gan = QuadraticGAN(target_function=is_part_of_line, initial_batch_size=3, number_of_batch=10, epochs=100,
-                                number_of_interation=3)
+        n = len(zip_stock())
+        self.gan = QuadraticGAN(target_function=zip_stock, initial_batch_size=8, number_of_batch=n // 8, epochs=500,
+                                number_of_interation=1)
 
     def test_sample_data(self):
         y = self.gan.sample_data(number_of_sample=100, scale=10)
@@ -53,4 +74,4 @@ class TestQuadraticGAN(TestCase):
         print(decision)
 
     def test_run(self):
-        self.gan.run(debug=False)
+        self.gan.run(debug=True)

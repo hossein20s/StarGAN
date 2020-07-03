@@ -14,14 +14,13 @@ from simple import generator_loss, discriminator_loss
 
 SCALE = 10
 noise_dim = 100
-checkpoint_dir = '/opt/host/Downloads/training_checkpoints'
 
 class QuadraticGAN:
 
     def __init__(self, target_function, initial_batch_size, number_of_batch, number_of_interation, epochs) -> None:
         super().__init__()
         logging.config.fileConfig(fname='log.conf')
-        self.logger = logging.getLogger('dev')
+        self.logger = logging.getLogger(QuadraticGAN.__name__)
         self.epochs = epochs
         self.target_function = target_function
         self.initial_batch_size = initial_batch_size
@@ -31,7 +30,7 @@ class QuadraticGAN:
         self.discriminator = self.make_discriminator_model()
         self.generator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
         self.discriminator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
-        self.checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
+        self.checkpoint_prefix = '/opt/host/Downloads/training_checkpoints/ckpt'
         self.checkpoint = tensorflow.train.Checkpoint(generator_optimizer=self.generator_optimizer,
                                                       discriminator_optimizer=self.discriminator_optimizer,
                                                       generator=self.generator,
@@ -49,7 +48,8 @@ class QuadraticGAN:
         self.make_animation(self.all_image_buffers)
 
     def run_iteration(self, batch_size, epochs, debug=False):
-        data = self.sample_data(number_of_sample=self.number_of_batch * batch_size, scale=SCALE)
+        # data = self.sample_data(number_of_sample=self.number_of_batch * batch_size, scale=SCALE)
+        data = self.target_function()
         image_buffers = self.train(data=data, epochs=epochs, debug=debug)
         self.all_image_buffers.extend(self.make_animation(image_buffers))
 
@@ -76,16 +76,20 @@ class QuadraticGAN:
         test_input = tensorflow.random.normal([len(data), noise_dim])
         start = time.time()
         image_buffers = []
+        log_period = min(10, epochs // 10)
+        snapshot_period = min(10, epochs // 10)
+        self.logger.info('snapshotting every {} and reporting every {} epochs'.format(snapshot_period, log_period))
         for epoch in range(epochs):
-
+            print(epoch, sep=' ', end='', flush=True)
             for x_batch in dataset:
                 self.train_step(x_batch)
             # self.logger.info(epoch)
-            if epoch % max(20, epochs//10) == 0:
+
+            if epoch % log_period == 0:
                 self.logger.info('Time for epoch {} is {} sec'.format(epoch + 1, time.time() - start))
                 # f.write("%d,%f,%f\n" % (i, dloss, gloss))
 
-            if epoch % min(100, epochs//10) == 0:
+            if epoch % snapshot_period == 0:
                 # Produce images for the GIF as we go
                 # display.clear_output(wait=True)
                 image_buffers.append(
@@ -137,7 +141,12 @@ class QuadraticGAN:
             'epoch {}, gen loss {}, discriminator loss {}'.format(epoch, gen_loss.numpy(), disc_loss.numpy()))
         pyplot.close()
         pyplot.scatter(*zip(*generated_data.numpy()))
-        pyplot.scatter(*zip(*data))
+        # ax = pyplot.gca()
+        # pyplot.scatter(*zip(*data))
+        pyplot.scatter(data[0], data[1])
+        # ax = data.plot(kind='scatter', x=0, y=1)
+        # fig = ax.get_figure()
+
         buffer = io.BytesIO()
         pyplot.savefig(buffer, format='png')
         if debug:

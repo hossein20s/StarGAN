@@ -48,9 +48,10 @@ class QuadraticGAN:
         self.make_animation(self.all_image_buffers)
 
     def run_iteration(self, batch_size, epochs, debug=False):
-        # data = self.sample_data(number_of_sample=self.number_of_batch * batch_size, scale=SCALE)
+        number_of_sample = self.number_of_batch * batch_size
+        # data = self.sample_data(number_of_sample, scale=SCALE)
         data = self.target_function()
-        image_buffers = self.train(data=data, epochs=epochs, debug=debug)
+        image_buffers = self.train(data=data, epochs=epochs, number_of_sample=number_of_sample, debug=debug)
         self.all_image_buffers.extend(self.make_animation(image_buffers))
 
     def train_step(self, x_batch):
@@ -71,9 +72,9 @@ class QuadraticGAN:
         self.discriminator_optimizer.apply_gradients(
             zip(gradients_of_discriminator, self.discriminator.trainable_variables))
 
-    def train(self, data, epochs, debug=False):
+    def train(self, data, epochs, number_of_sample, debug=False):
         dataset = tensorflow.data.Dataset.from_tensor_slices(data).batch(self.initial_batch_size)
-        test_input = tensorflow.random.normal([len(data), noise_dim])
+        test_input = tensorflow.random.normal([number_of_sample, noise_dim])
         start = time.time()
         image_buffers = []
         log_period = min(10, epochs // 10)

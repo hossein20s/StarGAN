@@ -45,8 +45,8 @@ class TestQuadraticGAN(TestCase):
     def setUp(self) -> None:
         super().setUp()
         n = len(zip_stock())
-        self.gan = QuadraticGAN(target_function=zip_stock, initial_batch_size=8, number_of_batch=n // 8, epochs=500,
-                                number_of_interation=1)
+        self.gan = QuadraticGAN(target_function=zip_stock, initial_batch_size=3, number_of_batch=3, epochs=30,
+                                number_of_interation=4)
 
     def test_sample_data(self):
         y = self.gan.sample_data(number_of_sample=100, scale=10)
@@ -74,4 +74,4 @@ class TestQuadraticGAN(TestCase):
         print(decision)
 
     def test_run(self):
-        self.gan.run(debug=True)
+        self.gan.run(debug=False)

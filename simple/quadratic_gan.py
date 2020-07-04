@@ -20,7 +20,7 @@ class QuadraticGAN:
     def __init__(self, target_function, initial_batch_size, number_of_batch, number_of_interation, epochs) -> None:
         super().__init__()
         logging.config.fileConfig(fname='log.conf')
-        self.logger = logging.getLogger(QuadraticGAN.__name__)
+        self.logger = logging.getLogger('dev')
         self.epochs = epochs
         self.target_function = target_function
         self.initial_batch_size = initial_batch_size
@@ -30,21 +30,20 @@ class QuadraticGAN:
         self.discriminator = self.make_discriminator_model()
         self.generator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
         self.discriminator_optimizer = tensorflow.keras.optimizers.Adam(1e-4)
-        self.checkpoint_prefix = '/opt/host/Downloads/training_checkpoints/ckpt'
-        self.checkpoint = tensorflow.train.Checkpoint(generator_optimizer=self.generator_optimizer,
+        self.checkpoint = tensorflow.train.Checkpoint(step=tensorflow.Variable(1),
+                                                      generator_optimizer=self.generator_optimizer,
                                                       discriminator_optimizer=self.discriminator_optimizer,
                                                       generator=self.generator,
                                                       discriminator=self.discriminator)
+        self.manager = tensorflow.train.CheckpointManager(self.checkpoint, '/opt/host/gdocs/checkpoints/quadraticGAN', max_to_keep=3)
         self.all_image_buffers = []
 
 
     def run(self, debug=False):
         batch_size = self.initial_batch_size
         for _ in range(self.number_of_interation):
-            batch_size *= 2
             self.run_iteration(batch_size=batch_size, epochs=self.epochs, debug=debug)
-            self.checkpoint.save(file_prefix='tmp')
-        self.checkpoint.save(file_prefix=self.checkpoint_prefix)
+            batch_size *= 2
         self.make_animation(self.all_image_buffers)
 
     def run_iteration(self, batch_size, epochs, debug=False):
@@ -73,6 +72,12 @@ class QuadraticGAN:
             zip(gradients_of_discriminator, self.discriminator.trainable_variables))
 
     def train(self, data, epochs, number_of_sample, debug=False):
+        self.checkpoint.restore(self.manager.latest_checkpoint)
+        if self.manager.latest_checkpoint:
+            self.logger.info("Restored from {}".format(self.manager.latest_checkpoint))
+        else:
+            self.logger.info("Initializing from scratch.")
+
         dataset = tensorflow.data.Dataset.from_tensor_slices(data).batch(self.initial_batch_size)
         test_input = tensorflow.random.normal([number_of_sample, noise_dim])
         start = time.time()
@@ -95,6 +100,11 @@ class QuadraticGAN:
                 # display.clear_output(wait=True)
                 image_buffers.append(
                     self.log_loss_and_save_images(epoch=epoch + 1, data=data, test_input=test_input, debug=debug))
+            self.checkpoint.step.assign_add(1)
+            if int(self.checkpoint.step) % 10 == 0:
+                save_path = self.manager.save()
+                self.logger.info("Saved checkpoint for step {}: {}".format(int(self.checkpoint.step), save_path))
+
         # Generate after the final epoch
         # display.clear_output(wait=True)
         image_buffers.append(self.log_loss_and_save_images(data=data, epoch=epochs, test_input=test_input, debug=debug))

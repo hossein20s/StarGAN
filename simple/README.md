@@ -16,3 +16,5 @@ and video https://youtu.be/9N96fMDP7xk
 
 
 Generating yahoo stock https://youtu.be/Svwet5UuFpU
+
+https://resizeimage.net/
